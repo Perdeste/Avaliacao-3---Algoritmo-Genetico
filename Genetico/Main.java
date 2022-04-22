@@ -6,8 +6,10 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Set;
 
 class Vertice {
     public int identificador;
@@ -31,6 +33,16 @@ class Vertice {
     }
 }
 
+class Caminho{
+    ArrayList<Vertice> caminho = new ArrayList<Vertice>();
+    int fitness;
+
+    public void calcula_fitness(){
+        this.fitness = 0;
+        for(int i = 0; i < this.caminho.size()-1; i++) this.fitness = this.fitness + this.caminho.get(i).calculaDistancia(this.caminho.get(i+1));
+    }
+}
+
 class Main {
     //Criação das tabelas em .txt de cada combinação dos algoritmos
     //Utilizamos o arquivo para gerar um gráfico no excel e apresenta-lo no relatório
@@ -47,59 +59,86 @@ class Main {
         }
     }
 
-    private static void operador_Ox2(ArrayList<Vertice> pai_1, ArrayList<Vertice> pai_2){
+    //Retorna a lista selecionada, usada para conseguir usar um for nas funções operadores
+    private static Caminho select_list(int i, Caminho individuo_1, Caminho individuo_2){
+        if(i == 1) return individuo_1;
+        else return individuo_2;
+    }
+   
+    //Cria um array com n números randomicos diferentes em um intervalo de 0 a list_size
+    private static ArrayList<Integer> n_random_numbers(int n, int list_size){
+        Random random = new Random();
+        Set<Integer>buffer = new LinkedHashSet<Integer>();
+        while (buffer.size() < n) {
+            buffer.add(random.nextInt(list_size));
+        }
+        ArrayList<Integer> posicao_array = new ArrayList<Integer>(buffer);
+        return posicao_array;
+    }
+    
+    //Seleção dos indivíduos a partir da técnica do selecao_torneio
+    //Dentre k indivíduos aleatórios da população selecione o que houver melhor fitness
+    private static Caminho selecao_torneio(int k_individuos, ArrayList<Caminho> populacao){
+        int min_fitness = Integer.MAX_VALUE;
+        Caminho min_caminho = null;
+
+        ArrayList<Integer> posicao_array = n_random_numbers(k_individuos, populacao.size());
+
+        for(int i = 0; i < posicao_array.size(); i++){
+            Caminho individuo = populacao.get(i);
+            if(min_fitness < individuo.fitness){
+                min_fitness = individuo.fitness;
+                min_caminho = individuo;
+            }
+        }
+        return min_caminho;
+    }
+
+    //Operador de Cruzamento --> produz 2 filhos a partir de 2 pais
+    private static void operador_Ox2(Caminho pai_1, Caminho pai_2){
         int quantidade_posicoes = 3;
 
-        ArrayList<Vertice> filho_1 = new ArrayList<Vertice>();
-        ArrayList<Vertice> filho_2 = new ArrayList<Vertice>();
+        Caminho filho_1 = new Caminho();
+        Caminho filho_2 = new Caminho();
 
         for(int i = 1; i <= 2; i++){
-            ArrayList<Integer> posicao_array = new ArrayList<Integer>();
+            ArrayList<Integer> posicao_array = n_random_numbers(quantidade_posicoes, (select_list((i % 2) + 1, pai_1, pai_2).caminho.size()));
 
-            if(i == 1){
-                posicao_array.add(0);
-                posicao_array.add(2);
-                posicao_array.add(7);
-
-            }else{
-                posicao_array.add(1);
-                posicao_array.add(4);
-                posicao_array.add(6);
-            }
-
-            /*Random random = new Random();
-            for(int posicao = 0; posicao < quantidade_posicoes; posicao++){
-                posicao_array.add(random.nextInt(select_list((i % 2) + 1, pai_1, pai_2).size() - 1));
-            }*/
+            posicao_array.forEach((posicao) -> System.out.print(posicao + " "));
+            System.out.println();
             
-            Collections.sort(posicao_array);
-            
-            ArrayList<Vertice> filho_i = select_list(i, filho_1, filho_2);
-            filho_i.addAll(select_list(i, pai_1, pai_2));
+            Caminho filho_i = select_list(i, filho_1, filho_2);
+            filho_i.caminho.addAll(select_list(i, pai_1, pai_2).caminho);
             
             ArrayList<Integer> conteudo_array = new ArrayList<Integer>();
 
             for(int j = 0; j < posicao_array.size(); j++){
-                conteudo_array.add(select_list(i,pai_1, pai_2).indexOf(select_list((i % 2) + 1, pai_1, pai_2).get(posicao_array.get(j))));
+                conteudo_array.add(select_list(i,pai_1, pai_2).caminho.indexOf(select_list((i % 2) + 1, pai_1, pai_2).caminho.get(posicao_array.get(j))));
             }
 
             Collections.sort(conteudo_array);
 
             for(int k = 0; k < conteudo_array.size(); k++){
-                filho_i.set(conteudo_array.get(k), select_list((i % 2) + 1, pai_1, pai_2).get(posicao_array.get(k)));
+                filho_i.caminho.set(conteudo_array.get(k), select_list((i % 2) + 1, pai_1, pai_2).caminho.get(posicao_array.get(k)));
             }
         }
+
+        filho_1.calcula_fitness();
+        filho_2.calcula_fitness();
+
         System.out.println("Filho1: ");
-        filho_1.forEach((vertice) -> System.out.print(vertice.identificador + " -> "));
+        filho_1.caminho.forEach((vertice) -> System.out.print(vertice.identificador + " -> "));
         System.out.println("\nFilho2: ");
-        filho_2.forEach((vertice) -> System.out.print(vertice.identificador + " -> "));
+        filho_2.caminho.forEach((vertice) -> System.out.print(vertice.identificador + " -> "));
     }
 
-    private static ArrayList<Vertice> select_list(int i, ArrayList<Vertice> array_1, ArrayList<Vertice> array_2){
-        if(i == 1) return array_1;
-        else return array_2;
+    //Mutação de um indivíduo a partir da troca dos valores de duas posições
+    private static void gerar_mutacao(Caminho individuo){
+        ArrayList<Integer> posicao_array = n_random_numbers(2, individuo.caminho.size());
+
+        Collections.swap(individuo.caminho, posicao_array.get(0), posicao_array.get(1));
     }
-   
+
     public static void main(String[] args) throws Exception {
         ArrayList<Vertice> listVertice = new ArrayList<Vertice>();
         HashMap<String,Double> resultado = new HashMap<String,Double>();
@@ -133,26 +172,26 @@ class Main {
 
         reader.close();
 
-        ArrayList<Vertice> pai_1 = new ArrayList<Vertice>();
-        ArrayList<Vertice> pai_2 = new ArrayList<Vertice>();
+        Caminho pai_1 = new Caminho();
+        Caminho pai_2 = new Caminho();
 
-        pai_1.add(0, listVertice.get(5));
-        pai_1.add(1, listVertice.get(2));
-        pai_1.add(2, listVertice.get(4));
-        pai_1.add(3, listVertice.get(0));
-        pai_1.add(4, listVertice.get(1));
-        pai_1.add(5, listVertice.get(3));
-        pai_1.add(6, listVertice.get(7));
-        pai_1.add(7, listVertice.get(6));
+        pai_1.caminho.add(0, listVertice.get(5)); //6
+        pai_1.caminho.add(1, listVertice.get(2)); //3
+        pai_1.caminho.add(2, listVertice.get(4)); //5
+        pai_1.caminho.add(3, listVertice.get(0)); //1
+        pai_1.caminho.add(4, listVertice.get(1)); //2
+        pai_1.caminho.add(5, listVertice.get(3)); //4
+        pai_1.caminho.add(6, listVertice.get(7)); //8
+        pai_1.caminho.add(7, listVertice.get(6)); //7
 
-        pai_2.add(0, listVertice.get(7));
-        pai_2.add(1, listVertice.get(4));
-        pai_2.add(2, listVertice.get(1));
-        pai_2.add(3, listVertice.get(3));
-        pai_2.add(4, listVertice.get(2));
-        pai_2.add(5, listVertice.get(0));
-        pai_2.add(6, listVertice.get(6));
-        pai_2.add(7, listVertice.get(5));
+        pai_2.caminho.add(0, listVertice.get(7)); //8
+        pai_2.caminho.add(1, listVertice.get(4)); //5
+        pai_2.caminho.add(2, listVertice.get(1)); //2
+        pai_2.caminho.add(3, listVertice.get(3)); //4
+        pai_2.caminho.add(4, listVertice.get(2)); //3
+        pai_2.caminho.add(5, listVertice.get(0)); //1
+        pai_2.caminho.add(6, listVertice.get(6)); //7
+        pai_2.caminho.add(7, listVertice.get(5)); //6
 
         operador_Ox2(pai_1, pai_2);
 
