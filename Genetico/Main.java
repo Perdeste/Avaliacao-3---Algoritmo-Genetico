@@ -135,6 +135,11 @@ class Main {
         return posicao_array;
 
     }
+    // retorna um intervalo aleatório [i:j] dentro de list_size 
+    private static int randomInInterval(int list_size){
+        Random random = new Random();
+        return random.nextInt(list_size);
+    }
     
     //Algoritmo Construtivo Vizinho mais próximo, servirá como método para a criação da população inicial
     private static Caminho construtivo_vizinho_proximo(ArrayList<Vertice> listVertice){   
@@ -226,6 +231,52 @@ class Main {
         // filho_2.caminho.forEach((vertice) -> System.out.print(vertice.identificador + " -> "));
     }
 
+    private static void retornaIntervalo(ArrayList<Vertice> intervalo, ArrayList<Vertice> caminho, int i, int j){
+        for(int k=i; k<j+1;k++){
+            intervalo.add(caminho.get(k));
+        }
+    }
+
+    private static void operador_Ox1 ( ArrayList<Caminho> nova_populacao, Caminho pai_1, Caminho pai_2){
+        Caminho filho_1 = new Caminho();
+        Caminho filho_2 = new Caminho();
+        int i , j ;
+        do{
+            i = randomInInterval(pai_1.caminho.size());
+        }while(i == pai_1.caminho.size()-1);
+        do{
+            j= randomInInterval(pai_1.caminho.size());
+        }while((j==0)|| (j<=i));
+        for(int k = 1; k <= 2; k++){
+            Caminho filho_k = select_list(k, filho_1, filho_2);
+            filho_k.caminho.addAll(select_list(k, pai_1, pai_2).caminho);
+            ArrayList<Vertice> intervalo = new ArrayList<>();
+            retornaIntervalo(intervalo, filho_k.caminho, i, j);
+            int idx = j+1;
+            Vertice cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(j);
+            while (idx != i){
+                if (idx ==  select_list((k % 2) + 1, pai_1, pai_2).caminho.size()){
+                    idx = 0;
+                }
+                while (intervalo.contains(cidade)){
+                    int aux = select_list((k % 2) + 1, pai_1, pai_2).caminho.indexOf(cidade);
+                    if(aux == select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
+                        cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(0);
+                    }
+                    else{
+                        cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(aux+1);
+                    }
+                }
+                filho_k.caminho.set(idx, cidade);
+                idx++;
+            }
+
+            filho_k.calcula_fitness();
+            nova_populacao.add(filho_k);
+        }
+
+    }
+
     //Mutação de um indivíduo a partir da troca dos valores de duas posições
     private static void gerar_mutacao(ArrayList<Caminho> populacao){
         int i = new Random().nextInt(populacao.size());
@@ -280,6 +331,7 @@ class Main {
         ArrayList<Caminho> nova_populacao = new ArrayList<Caminho>();
         for (int i = 0; i < selecao_populacao.size()-1; i++) {
             operador_Ox2(nova_populacao, quantidade_posicoes, selecao_populacao.get(i), selecao_populacao.get(i+1));
+            //operador_Ox1(nova_populacao, selecao_populacao.get(i), selecao_populacao.get(i+1));
         }
 
         return nova_populacao;
@@ -332,6 +384,8 @@ class Main {
         double taxa_sobrevivencia = 0.5;
         double taxa_busca_local = 0.1;
 
+        
+
         //Condição de Parada
         int max_geracoes = 1000;
 
@@ -339,7 +393,7 @@ class Main {
         HashMap<String,Double> resultado = new HashMap<String,Double>();
         
         //String entrada = args[0];
-        String entrada = "pla7397.tsp";
+        String entrada = "att48.tsp";
         
         Scanner readerOtimo = new Scanner(new FileReader("./resultados.txt"));
         Scanner reader = new Scanner(new FileReader("./entradas/".concat(entrada)));
@@ -374,6 +428,7 @@ class Main {
         int caminho_entrada = populacao.get(0).fitness;
 
         int anterior = caminho_entrada;
+        
 
         System.out.println("Iniciando algoritmo genético");
         for(int geracao = 0; geracao < max_geracoes; geracao++){
@@ -381,7 +436,8 @@ class Main {
 
             ArrayList<Caminho> selecao_populacao = etapa_2_selecao(k_individuos_selecao, taxa_cruzamento, populacao);
             
-            ArrayList<Caminho> nova_populacao = etapa_3_cruzamento(populacao, selecao_populacao, posicoes_cruzamento);
+            
+            /*ArrayList<Caminho> nova_populacao = etapa_3_cruzamento(populacao, selecao_populacao, posicoes_cruzamento);
 
             etapa_4_mutacao(nova_populacao, taxa_mutacao);
 
@@ -393,7 +449,7 @@ class Main {
                 System.out.println("Geração" + geracao + ": " + populacao.get(0).fitness);
             }      
 
-            anterior = populacao.get(0).fitness;
+            anterior = populacao.get(0).fitness;*/
         }
 
         System.out.println("Entrada:");
