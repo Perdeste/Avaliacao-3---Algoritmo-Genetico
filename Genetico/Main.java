@@ -135,11 +135,6 @@ class Main {
         return posicao_array;
 
     }
-    // retorna um intervalo aleatório [i:j] dentro de list_size 
-    private static int randomInInterval(int list_size){
-        
-        return (int) Math.floor(Math.random()*(list_size));
-    }
     
     //Algoritmo Construtivo Vizinho mais próximo, servirá como método para a criação da população inicial
     private static Caminho construtivo_vizinho_proximo(ArrayList<Vertice> listVertice){   
@@ -196,6 +191,47 @@ class Main {
         return min_caminho;
     }
 
+    private static void operador_Ox1(ArrayList<Caminho> nova_populacao, Caminho pai_1, Caminho pai_2){
+        Caminho filho_1 = new Caminho();
+        Caminho filho_2 = new Caminho();
+        int i , j ;
+        
+        j = (int) Math.round(Math.random() * (pai_1.caminho.size() - 2)) + 1;
+        i = (int) Math.round((Math.random() * (j - 1)))+1;
+
+        for(int k = 1; k <= 2; k++){
+            Caminho filho_k = select_list(k, filho_1, filho_2);
+            for (int l = 0; l < pai_1.caminho.size(); l++) {
+                filho_k.caminho.add(l, new Vertice());
+            }
+            for (int l = i; l < j+1; l++) {
+                filho_k.caminho.set(l, select_list((k % 2) + 1, pai_1, pai_2).caminho.get(l));
+            }
+            int idx = j+1;
+            Vertice cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(j);
+            while (idx != i){
+                
+                if (idx >  select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
+                    idx = 0;
+                }
+                while (filho_k.caminho.contains(cidade)){     
+                    int aux = select_list((k % 2) + 1, pai_1, pai_2).caminho.indexOf(cidade);
+                    if(aux == select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
+                        cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(0);
+                    }
+                    else{
+                        cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(aux+1);
+                        
+                    }
+                }
+                filho_k.caminho.set(idx, cidade);
+                idx++;
+            }
+            filho_k.calcula_fitness();
+            nova_populacao.add(filho_k);
+        }
+    }
+
     //Operador de Cruzamento --> produz 2 filhos a partir de 2 pais
     private static void operador_Ox2(ArrayList<Caminho> nova_populacao, int quantidade_posicoes, Caminho pai_1, Caminho pai_2){
         Caminho filho_1 = new Caminho();
@@ -231,64 +267,7 @@ class Main {
         // filho_2.caminho.forEach((vertice) -> System.out.print(vertice.identificador + " -> "));
     }
 
-    private static void retornaIntervalo(Caminho filho, ArrayList<Vertice> caminho, int i, int j){
-        for(int k=i; k<j+1;k++){
-            filho.caminho.set(k, caminho.get(k));
-        }
-    }
-
-    private static void operador_Ox1(ArrayList<Caminho> nova_populacao, Caminho pai_1, Caminho pai_2){
-        Caminho filho_1 = new Caminho();
-        Caminho filho_2 = new Caminho();
-        int i , j ;
-
-        //Random random = new Random();
-        //j = random.nextInt( pai_1.caminho.size()-2);
-        //i = random.nextInt(j);
-        
-        
-        j = (int) Math.round(Math.random() * (pai_1.caminho.size() - 2)) + 1;
-        
-        i = (int) Math.round((Math.random() * (j - 1)));
-        
-        for(int k = 1; k <= 2; k++){
-            Caminho filho_k = select_list(k, filho_1, filho_2);
-            for (int l = 0; l < pai_1.caminho.size(); l++) {
-                filho_k.caminho.add(l, new Vertice());
-                
-            }
-            //filho_k.caminho.addAll(select_list(k, pai_1, pai_2).caminho);
-            //ArrayList<Vertice> intervalo = new ArrayList<>();
-            //retornaIntervalo(filho_k, select_list((k % 2) + 1, pai_1, pai_2).caminho, i, j);
-            for (int l = i; l < j+1; l++) {
-                filho_k.caminho.set(l, select_list((k % 2) + 1, pai_1, pai_2).caminho.get(l));
-            }
-            int idx = j+1;
-            Vertice cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(j);
-            while (idx != i){
-                if (idx >  select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
-                    idx = 0;
-                    
-                }
-                while (filho_k.caminho.contains(cidade)){     
-                    int aux = select_list((k % 2) + 1, pai_1, pai_2).caminho.indexOf(cidade);
-                    if(aux == select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
-                        cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(0);
-                    }
-                    else{
-                        cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(aux+1);
-                        
-                    }
-                }
-                filho_k.caminho.set(idx, cidade);
-                idx++;
-
-            }
-            filho_k.calcula_fitness();
-            nova_populacao.add(filho_k);
-        }
-
-    }
+    
 
     //Mutação de um indivíduo a partir da troca dos valores de duas posições
     private static void gerar_mutacao(ArrayList<Caminho> populacao){
