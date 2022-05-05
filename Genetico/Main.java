@@ -137,8 +137,8 @@ class Main {
     }
     // retorna um intervalo aleatório [i:j] dentro de list_size 
     private static int randomInInterval(int list_size){
-        Random random = new Random();
-        return random.nextInt(list_size);
+        
+        return (int) Math.floor(Math.random()*(list_size));
     }
     
     //Algoritmo Construtivo Vizinho mais próximo, servirá como método para a criação da população inicial
@@ -231,46 +231,59 @@ class Main {
         // filho_2.caminho.forEach((vertice) -> System.out.print(vertice.identificador + " -> "));
     }
 
-    private static void retornaIntervalo(ArrayList<Vertice> intervalo, ArrayList<Vertice> caminho, int i, int j){
+    private static void retornaIntervalo(Caminho filho, ArrayList<Vertice> caminho, int i, int j){
         for(int k=i; k<j+1;k++){
-            intervalo.add(caminho.get(k));
+            filho.caminho.set(k, caminho.get(k));
         }
     }
 
-    private static void operador_Ox1 ( ArrayList<Caminho> nova_populacao, Caminho pai_1, Caminho pai_2){
+    private static void operador_Ox1(ArrayList<Caminho> nova_populacao, Caminho pai_1, Caminho pai_2){
         Caminho filho_1 = new Caminho();
         Caminho filho_2 = new Caminho();
         int i , j ;
-        do{
-            i = randomInInterval(pai_1.caminho.size());
-        }while(i == pai_1.caminho.size()-1);
-        do{
-            j= randomInInterval(pai_1.caminho.size());
-        }while((j==0)|| (j<=i));
+
+        //Random random = new Random();
+        //j = random.nextInt( pai_1.caminho.size()-2);
+        //i = random.nextInt(j);
+        
+        
+        j = (int) Math.round(Math.random() * (pai_1.caminho.size() - 2)) + 1;
+        
+        i = (int) Math.round((Math.random() * (j - 1)));
+        
         for(int k = 1; k <= 2; k++){
             Caminho filho_k = select_list(k, filho_1, filho_2);
-            filho_k.caminho.addAll(select_list(k, pai_1, pai_2).caminho);
-            ArrayList<Vertice> intervalo = new ArrayList<>();
-            retornaIntervalo(intervalo, filho_k.caminho, i, j);
+            for (int l = 0; l < pai_1.caminho.size(); l++) {
+                filho_k.caminho.add(l, new Vertice());
+                
+            }
+            //filho_k.caminho.addAll(select_list(k, pai_1, pai_2).caminho);
+            //ArrayList<Vertice> intervalo = new ArrayList<>();
+            //retornaIntervalo(filho_k, select_list((k % 2) + 1, pai_1, pai_2).caminho, i, j);
+            for (int l = i; l < j+1; l++) {
+                filho_k.caminho.set(l, select_list((k % 2) + 1, pai_1, pai_2).caminho.get(l));
+            }
             int idx = j+1;
             Vertice cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(j);
             while (idx != i){
-                if (idx ==  select_list((k % 2) + 1, pai_1, pai_2).caminho.size()){
+                if (idx >  select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
                     idx = 0;
+                    
                 }
-                while (intervalo.contains(cidade)){
+                while (filho_k.caminho.contains(cidade)){     
                     int aux = select_list((k % 2) + 1, pai_1, pai_2).caminho.indexOf(cidade);
                     if(aux == select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
                         cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(0);
                     }
                     else{
                         cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(aux+1);
+                        
                     }
                 }
                 filho_k.caminho.set(idx, cidade);
                 idx++;
-            }
 
+            }
             filho_k.calcula_fitness();
             nova_populacao.add(filho_k);
         }
@@ -330,8 +343,8 @@ class Main {
     private static ArrayList<Caminho> etapa_3_cruzamento(ArrayList<Caminho> populacao, ArrayList<Caminho> selecao_populacao, int quantidade_posicoes){
         ArrayList<Caminho> nova_populacao = new ArrayList<Caminho>();
         for (int i = 0; i < selecao_populacao.size()-1; i++) {
-            operador_Ox2(nova_populacao, quantidade_posicoes, selecao_populacao.get(i), selecao_populacao.get(i+1));
-            //operador_Ox1(nova_populacao, selecao_populacao.get(i), selecao_populacao.get(i+1));
+            //operador_Ox2(nova_populacao, quantidade_posicoes, selecao_populacao.get(i), selecao_populacao.get(i+1));
+            operador_Ox1(nova_populacao, selecao_populacao.get(i), selecao_populacao.get(i+1));
         }
 
         return nova_populacao;
@@ -437,7 +450,7 @@ class Main {
             ArrayList<Caminho> selecao_populacao = etapa_2_selecao(k_individuos_selecao, taxa_cruzamento, populacao);
             
             
-            /*ArrayList<Caminho> nova_populacao = etapa_3_cruzamento(populacao, selecao_populacao, posicoes_cruzamento);
+            ArrayList<Caminho> nova_populacao = etapa_3_cruzamento(populacao, selecao_populacao, posicoes_cruzamento);
 
             etapa_4_mutacao(nova_populacao, taxa_mutacao);
 
@@ -445,11 +458,11 @@ class Main {
 
             etapa_6_atualizacao(populacao, nova_populacao, taxa_sobrevivencia);
 
-            if(populacao.get(0).fitness < anterior || (geracao % 1000) == 0){
-                System.out.println("Geração" + geracao + ": " + populacao.get(0).fitness);
-            }      
+            //if(populacao.get(0).fitness < anterior || (geracao % 1000) == 0){
+            System.out.println("Geração" + geracao + ": " + populacao.get(0).fitness);
+            //}      
 
-            anterior = populacao.get(0).fitness;*/
+            anterior = populacao.get(0).fitness;
         }
 
         System.out.println("Entrada:");
