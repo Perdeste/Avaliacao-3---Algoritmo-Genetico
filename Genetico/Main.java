@@ -267,6 +267,8 @@ class Main {
         // filho_2.caminho.forEach((vertice) -> System.out.print(vertice.identificador + " -> "));
     }
 
+    
+
     //Mutação de um indivíduo a partir da troca dos valores de duas posições
     private static void gerar_mutacao(ArrayList<Caminho> populacao){
         int i = new Random().nextInt(populacao.size());
