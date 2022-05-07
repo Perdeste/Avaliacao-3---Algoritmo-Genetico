@@ -108,7 +108,7 @@ class Main {
         try{
             FileWriter leitor = new FileWriter("./tabelas/".concat(nomeArquivo.concat(".txt")));
             PrintWriter bufferWriter = new PrintWriter(leitor);
-            bufferWriter.println("Geracao,Melhor_Geracao,Melhor_Geral");
+            bufferWriter.println("Geracao,Melhor_Geracao,Pior_Geracao,Melhor_Geral");
             return bufferWriter;
         }catch(IOException ex){
             System.out.println("Falha na leitura do arquivo");
@@ -171,23 +171,30 @@ class Main {
 
     //Seleção dos indivíduos a partir da técnica do selecao_torneio
     //Dentre k indivíduos aleatórios da população selecione o que houver melhor fitness
-    private static Caminho selecao_torneio(int k_individuos, ArrayList<Caminho> populacao){
-        int min_fitness = Integer.MAX_VALUE;
-        Caminho min_caminho = null;
+    private static Caminho selecao_roleta(ArrayList<Caminho> populacao){
+        double total = 0;
+        double anterior = 0;
+        int i = 0;
 
-        ArrayList<Integer> posicao_array = n_random_numbers(k_individuos, populacao.size());
+        for (i = 0; i < populacao.size(); i++) total = total + populacao.get(i).fitness;
 
-        for(int i = 0; i < posicao_array.size(); i++){
-            Caminho individuo = populacao.get(posicao_array.get(i));
-            if(min_fitness > individuo.fitness){
-                min_fitness = individuo.fitness;
-                min_caminho = individuo;
+        double seleciona = Math.random();
+        //System.out.println(seleciona);
+        int index = 0;
+        
+        for (i = 0; i < populacao.size(); i++) {
+            double pedaco = (total - populacao.get(i).fitness) / (total * populacao.size());    
+            anterior += pedaco;
+            if(anterior >= seleciona){
+                index = i;
+                break;
             }
-        }
-
-        populacao.remove(min_caminho);
-
-        return min_caminho;
+        } 
+        //System.out.println("index: " + index);
+        //System.out.println(index);
+        Caminho buffer = populacao.get(index);
+        populacao.remove(index);
+        return buffer;
     }
 
     //Operador de Cruzamento Ox1 --> produz 2 filhos a partir de 2 pais
@@ -199,18 +206,16 @@ class Main {
         j = (int) Math.round(Math.random() * (pai_1.caminho.size() - 2)) + 1;
         i = (int) Math.round((Math.random() * (j - 1)))+1;
         
-        filho_1.caminho.addAll(pai_1.caminho);
-        filho_2.caminho.addAll(pai_2.caminho);
+        
 
         for(int k = 1; k <= 2; k++){
             ArrayList<Vertice> intervalo = new ArrayList<Vertice>();
             Caminho filho_k = select_list(k, filho_1, filho_2);
-            // for (int l = 0; l < pai_1.caminho.size(); l++) {
-            //     filho_k.caminho.add(l, new Vertice());
-            // }
+            for (int l = 0; l < pai_1.caminho.size(); l++) {
+                filho_k.caminho.add(l, new Vertice());
+            }
             for (int l = i; l < j+1; l++) {
-                filho_k.caminho.set(l, select_list((k % 2) + 1, pai_1, pai_2).caminho.get(l));
-                intervalo.add(select_list((k % 2) + 1, pai_1, pai_2).caminho.get(l));
+                filho_k.caminho.set(l, select_list(k, pai_1, pai_2).caminho.get(l));
             }
             int idx = j+1;
             Vertice cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(j);
@@ -219,7 +224,7 @@ class Main {
                 if (idx >  select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
                     idx = 0;
                 }
-                while (intervalo.contains(cidade)){     
+                while (filho_k.caminho.contains(cidade)){     
                     int aux = select_list((k % 2) + 1, pai_1, pai_2).caminho.indexOf(cidade);
                     if(aux == select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
                         cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(0);
@@ -230,13 +235,12 @@ class Main {
                     }
                 }
                 filho_k.caminho.set(idx, cidade);
-                intervalo.add(cidade);
                 idx++;
-            }
+            }          
             filho_k.calcula_fitness();
             
             //System.out.println("fitness: "+ filho_k.fitness);
-            
+            //System.out.println("Filho: " + filho_k.fitness);
             nova_populacao.add(filho_k);
         }
         
@@ -278,7 +282,6 @@ class Main {
     }
 
     
-
     //Mutação de um indivíduo a partir da troca dos valores de duas posições
     private static void gerar_mutacao(ArrayList<Caminho> populacao){
         int i = new Random().nextInt(populacao.size());
@@ -309,7 +312,7 @@ class Main {
     }
 
     //Etapa Seleção dos cromossomos a serem cruzados
-    private static ArrayList<Caminho> etapa_2_selecao(int k_individuos, double taxa_cruzamento, ArrayList<Caminho> populacao){
+    private static ArrayList<Caminho> etapa_2_selecao(double taxa_cruzamento, ArrayList<Caminho> populacao){
         ArrayList<Caminho> selecao_populacao = new ArrayList<Caminho>();
         ArrayList<Caminho> buffer_populacao = new ArrayList<Caminho>(populacao);
 
@@ -318,7 +321,7 @@ class Main {
         quantidade_cromossomos = quantidade_cromossomos +(quantidade_cromossomos % 2);
 
         while(selecao_populacao.size() < quantidade_cromossomos){
-            selecao_populacao.add(selecao_torneio(k_individuos, buffer_populacao));
+            selecao_populacao.add(selecao_roleta(buffer_populacao));
         }
         
         return selecao_populacao;
@@ -349,7 +352,7 @@ class Main {
 
     //Etapa Busca Local para gerar novos vizinhos - 2-OPT
     private static void etapa_5_busca_local(ArrayList<Caminho> populacao, ArrayList<Caminho> nova_populacao, double taxa_busca_local, int busca_local_profundidade){
-        int n_individuos_populacao = (int) (populacao.size());
+        int n_individuos_populacao = (int) (nova_populacao.size() * taxa_busca_local);
         
         for (int i = 0; i < n_individuos_populacao; i++) {
             melhorativo2OPT(nova_populacao.get(i), nova_populacao, busca_local_profundidade);
@@ -360,19 +363,19 @@ class Main {
     private static void etapa_6_atualizacao(ArrayList<Caminho> populacao, ArrayList<Caminho> nova_populacao, double taxa_sobrevivencia){
         Collections.sort(nova_populacao);
 
-        int n_individuos_populacao = (int) (populacao.size() * (1 - taxa_sobrevivencia));
+        int n_individuos_populacao = (int) (populacao.size() * taxa_sobrevivencia);
 
         int j = 0;
-        int inicio = (populacao.size() - n_individuos_populacao)/2;
+        int inicio = n_individuos_populacao;
 
-        for (int i = inicio; i < inicio + n_individuos_populacao && i < nova_populacao.size(); i++) {
+        for (int i = inicio; i < populacao.size() && i < nova_populacao.size(); i++) {
             populacao.set(i,nova_populacao.get(j++));
         }
     }
 
     //Algoritmo Genético
     private static void algoritmo_genetico(String operador,
-        PrintWriter bufferWriter, int max_geracoes, int tamanho_populacao, int k_individuos_selecao,
+        PrintWriter bufferWriter, int max_geracoes, int tamanho_populacao,
         int posicoes_cruzamento, int busca_local_profundidade, double taxa_busca_local,
         double taxa_cruzamento, double taxa_mutacao, double taxa_sobrevivencia,
         ArrayList<Vertice> listVertice, double melhor_resultado
@@ -380,20 +383,28 @@ class Main {
         try{
             String condicao_parada = "";
             int geracao = 0;
+            int estagnacao = (int) (0.5 * max_geracoes);
+            int diferenca_geracao_melhoria = 0;
             System.out.println("Construindo população inicial...");
 
             ArrayList<Caminho> populacao = etapa_populacao_inical(tamanho_populacao, listVertice);
 
             int caminho_entrada = populacao.get(0).fitness;
 
-             int anterior = caminho_entrada;
+            int anterior = caminho_entrada;
 
             System.out.println("Iniciando algoritmo genético com operador " + operador + "...");
-            
-            while(geracao < max_geracoes){
-                etapa_1_aptidao(populacao);
 
-                ArrayList<Caminho> selecao_populacao = etapa_2_selecao(k_individuos_selecao, taxa_cruzamento, populacao);
+            long inicio = System.currentTimeMillis();
+            long fim = 0;
+            
+            while(diferenca_geracao_melhoria < estagnacao && (fim - inicio) < 9000000 && (geracao < max_geracoes)){
+                diferenca_geracao_melhoria++;
+                etapa_1_aptidao(populacao);
+                System.out.println("Geração " + geracao + " melhor: " + populacao.get(0).fitness);
+                System.out.println("Geração " + geracao + " pior: " + populacao.get(populacao.size()-1).fitness);
+
+                ArrayList<Caminho> selecao_populacao = etapa_2_selecao(taxa_cruzamento, populacao);
                 
                 ArrayList<Caminho> nova_populacao = etapa_3_cruzamento(operador, populacao, selecao_populacao, posicoes_cruzamento);
 
@@ -403,28 +414,37 @@ class Main {
 
                 etapa_6_atualizacao(populacao, nova_populacao, taxa_sobrevivencia);
 
-                 //if(populacao.get(0).fitness < anterior || (geracao % 1000) == 0){
-                     System.out.println("Geração " + geracao + ": " + populacao.get(0).fitness);
-                 //}      
+                //if(populacao.get(0).fitness < anterior){
+                   // diferenca_geracao_melhoria = 0;
+                    
+                //}      
                 
-                 anterior = populacao.get(0).fitness;
+                anterior = populacao.get(0).fitness;
 
-                bufferWriter.println(geracao + "," + nova_populacao.get(0).fitness + "," + populacao.get(0).fitness);
+                bufferWriter.println(geracao + "," + nova_populacao.get(0).fitness + "," + nova_populacao.get(nova_populacao.size()-1).fitness + "," + populacao.get(0).fitness);
                 geracao++;
+                fim = System.currentTimeMillis();
             }  
             double precisao = melhor_resultado/populacao.get(0).fitness;
-            if(geracao >= geracao) {
-                condicao_parada = "MAX_GERAÇÃO";
+            if(geracao == max_geracoes) {
+                condicao_parada = "MAX_GERACAO";
+            }else if(diferenca_geracao_melhoria == estagnacao){
+                condicao_parada = "ESTAGNACAO";
+            }else if((fim - inicio) >= 9000000){
+                condicao_parada = "TEMPO_ESGOTADO";
             }
             System.out.println("----------------------------------------------");
             System.out.println("Melhor individuo -> População inicial:");
             System.out.println("Fitness: " + caminho_entrada);
-            System.out.println("Melhor individuo -> População Geração " + max_geracoes + ":");
+            System.out.println("Melhor individuo -> População Geração " + geracao + ":");
             System.out.println("Fitness: " + populacao.get(0).fitness);
             System.out.println("Precisão: " + precisao);
             System.out.println("Condição de parada atendida: " + condicao_parada);
             System.out.println("----------------------------------------------"); 
-            bufferWriter.println("\nPrecisão: " + precisao + "\nCondição_Parada: " + condicao_parada);
+            bufferWriter.println("\nPrecisao,Condicao_Parada,Tempo,Melhor_Fitness");
+            bufferWriter.println(precisao + "," + condicao_parada + "," + ((fim - inicio)/1000) + "," + populacao.get(0).fitness);
+            bufferWriter.println("\ntamanho_populacao,k_individuos_selecao,posicoes_cruzamento,busca_local_profundidade,taxa_busca_local,taxa_cruzamento,taxa_mutacao,taxa_sobrevivencia");
+            bufferWriter.println(tamanho_populacao + "," + posicoes_cruzamento + "," + busca_local_profundidade + "," + taxa_busca_local + "," + taxa_cruzamento + "," + taxa_mutacao + "," + taxa_sobrevivencia);
         }catch(Exception e){
             System.out.println("Erro inesperado: " + e.toString());
         }finally{
@@ -466,32 +486,21 @@ class Main {
 
         reader.close();
 
-        int max_geracoes = 1000;
-
-        /*
-        Definir as condições de paradas
-
-        Possíveis condições:
-            OK - max_geracoes 
-            - tempo
-            - precisão
-            - aptidão do melhor indivíduo
-            - estagnação
-        */
-
+        int max_geracoes = 2000;
+        
         //Execução do algoritmo genético com operador OX2
-        algoritmo_genetico("OX2",
-            cria_tabela(entrada.concat("_OX2")), max_geracoes, 50, 10,
-            3, 50, 0.1,
-            0.6, 0.2, 0.5,
-            new ArrayList<Vertice>(listVertice), resultado.get(entrada));
+        // algoritmo_genetico("OX2",
+        //     cria_tabela(entrada.concat("_OX2")), max_geracoes, 50,
+        //     3, 50, 0.1,
+        //     0.8, 0.1, 0.3,
+        //     new ArrayList<Vertice>(listVertice), resultado.get(entrada));
         
         //Execução do algoritmo genético com operador OX1
-        // algoritmo_genetico("OX1",
-        //     cria_tabela(entrada.concat("_OX1")), max_geracoes, 50, 2,
-        //     3, 20, 0.1,
-        //     0.9, 0.1, 0.5,
-        //     new ArrayList<Vertice>(listVertice), resultado.get(entrada));
+        algoritmo_genetico("OX1",
+            cria_tabela(entrada.concat("_OX1")), max_geracoes, 50,
+            3, 50, 0.2,
+            0.7, 0.1, 0.5,
+            new ArrayList<Vertice>(listVertice), resultado.get(entrada));
 
     }
 }
