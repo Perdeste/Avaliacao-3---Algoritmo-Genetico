@@ -106,7 +106,7 @@ class Main {
     //Utilizamos o arquivo para gerar um gráfico no excel e apresenta-lo no relatório
     private static PrintWriter cria_tabela(String nomeArquivo){
         try{
-            FileWriter leitor = new FileWriter("./tabelas/".concat(nomeArquivo.concat(".txt")));
+            FileWriter leitor = new FileWriter("./tabelas/".concat(nomeArquivo.concat(".txt")), true);
             PrintWriter bufferWriter = new PrintWriter(leitor);
             bufferWriter.println("Geracao,Melhor_Geracao,Pior_Geracao,Melhor_Geral");
             return bufferWriter;
@@ -203,15 +203,18 @@ class Main {
         int i , j ;
         
         i = new Random().nextInt(pai_1.caminho.size() - 2) + 1;
-        j = i + (new Random().nextInt(pai_1.caminho.size() - i))/2;
+        j = i + (new Random().nextInt(pai_1.caminho.size() - i));
+
+        // System.out.println("Pai_1: " + pai_1.fitness);
+        // System.out.println("Pai_2: " + pai_2.fitness);
 
         for(int k = 1; k <= 2; k++){
             Caminho filho_k = select_list(k, filho_1, filho_2);
             for (int l = 0; l < pai_1.caminho.size(); l++) {
-                filho_k.caminho.add(l, new Vertice());
+                filho_k.caminho.add(new Vertice());
             }
             for (int l = i; l < j+1; l++) {
-                filho_k.caminho.set(l, select_list((k % 2) + 1, pai_1, pai_2).caminho.get(l));
+                filho_k.caminho.set(l, select_list(k, pai_1, pai_2).caminho.get(l));
             }
             int idx = j+1;
             Vertice cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(j);
@@ -234,8 +237,11 @@ class Main {
                 idx++;
             }          
             filho_k.calcula_fitness();
+            // System.out.println("Filho_" + k + ": " + filho_k.fitness);
             nova_populacao.add(filho_k);
         }
+        
+
     }
 
     //Operador de Cruzamento Ox2 --> produz 2 filhos a partir de 2 pais
@@ -266,13 +272,7 @@ class Main {
             
             nova_populacao.add(filho_i);
         }
-
-        // System.out.println("Filho1: ");
-        // filho_1.caminho.forEach((vertice) -> System.out.print(vertice.identificador + " -> "));
-        // System.out.println("\nFilho2: ");
-        // filho_2.caminho.forEach((vertice) -> System.out.print(vertice.identificador + " -> "));
     }
-
     
     //Mutação de um indivíduo a partir da troca dos valores de duas posições
     private static void gerar_mutacao(ArrayList<Caminho> populacao){
@@ -322,10 +322,11 @@ class Main {
     //Etapa Cruzamento dos cromossomos selecionados da etapa 2
     private static ArrayList<Caminho> etapa_3_cruzamento(String operador, ArrayList<Caminho> populacao, ArrayList<Caminho> selecao_populacao, int quantidade_posicoes){
         ArrayList<Caminho> nova_populacao = new ArrayList<Caminho>();
+       // System.out.println("Etapa 3");
         for (int i = 0; i < selecao_populacao.size()-1; i++) {
             if(operador.equals("OX2")){
                 operador_Ox2(nova_populacao, quantidade_posicoes, selecao_populacao.get(i), selecao_populacao.get(i+1));
-            }else{
+            }else{             
                 operador_Ox1(nova_populacao, selecao_populacao.get(i), selecao_populacao.get(i+1));
             }
         }
@@ -375,7 +376,7 @@ class Main {
         try{
             String condicao_parada = "";
             int geracao = 0;
-            int estagnacao = (int) (0.15 * max_geracoes);
+            int estagnacao = (int) (0.5 * max_geracoes);
             int diferenca_geracao_melhoria = 0;
             System.out.println("Construindo população inicial...");
 
@@ -392,7 +393,6 @@ class Main {
             
             while(diferenca_geracao_melhoria < estagnacao && (fim - inicio) < 9000000 && (geracao < max_geracoes)){
                 diferenca_geracao_melhoria++;
-                etapa_1_aptidao(populacao);
 
                 ArrayList<Caminho> selecao_populacao = etapa_2_selecao(taxa_cruzamento, populacao);
                 
@@ -404,10 +404,12 @@ class Main {
 
                 etapa_6_atualizacao(populacao, nova_populacao, taxa_sobrevivencia);
 
-                if(populacao.get(0).fitness < anterior){
+                etapa_1_aptidao(populacao);
+
+                //if(populacao.get(0).fitness < anterior){
                     diferenca_geracao_melhoria = 0;
                     System.out.println("Geração " + geracao + ": " + populacao.get(0).fitness);
-                }      
+                //}      
                 
                 anterior = populacao.get(0).fitness;
 
@@ -480,16 +482,16 @@ class Main {
         
         //Execução do algoritmo genético com operador OX2
         algoritmo_genetico("OX2",
-            cria_tabela(entrada.concat("_OX2")), max_geracoes, 50,
+            cria_tabela(entrada.concat("_OX2")), max_geracoes, 100,
             3, 50, 0.1,
-            0.8, 0.1, 0.3,
+            0.9, 0.05, 0.4,
             new ArrayList<Vertice>(listVertice), resultado.get(entrada));
         
         //Execução do algoritmo genético com operador OX1
         algoritmo_genetico("OX1",
             cria_tabela(entrada.concat("_OX1")), max_geracoes, 50,
             3, 50, 0.1,
-            0.8, 0.2, 0.3,
+            0.7, 0.1, 0.4,
             new ArrayList<Vertice>(listVertice), resultado.get(entrada));
 
     }
