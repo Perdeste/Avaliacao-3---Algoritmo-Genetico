@@ -178,7 +178,7 @@ class Main {
         ArrayList<Integer> posicao_array = n_random_numbers(k_individuos, populacao.size());
 
         for(int i = 0; i < posicao_array.size(); i++){
-            Caminho individuo = populacao.get(i);
+            Caminho individuo = populacao.get(posicao_array.get(i));
             if(min_fitness > individuo.fitness){
                 min_fitness = individuo.fitness;
                 min_caminho = individuo;
@@ -198,14 +198,19 @@ class Main {
         
         j = (int) Math.round(Math.random() * (pai_1.caminho.size() - 2)) + 1;
         i = (int) Math.round((Math.random() * (j - 1)))+1;
+        
+        filho_1.caminho.addAll(pai_1.caminho);
+        filho_2.caminho.addAll(pai_2.caminho);
 
         for(int k = 1; k <= 2; k++){
+            ArrayList<Vertice> intervalo = new ArrayList<Vertice>();
             Caminho filho_k = select_list(k, filho_1, filho_2);
-            for (int l = 0; l < pai_1.caminho.size(); l++) {
-                filho_k.caminho.add(l, new Vertice());
-            }
+            // for (int l = 0; l < pai_1.caminho.size(); l++) {
+            //     filho_k.caminho.add(l, new Vertice());
+            // }
             for (int l = i; l < j+1; l++) {
                 filho_k.caminho.set(l, select_list((k % 2) + 1, pai_1, pai_2).caminho.get(l));
+                intervalo.add(select_list((k % 2) + 1, pai_1, pai_2).caminho.get(l));
             }
             int idx = j+1;
             Vertice cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(j);
@@ -214,7 +219,7 @@ class Main {
                 if (idx >  select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
                     idx = 0;
                 }
-                while (filho_k.caminho.contains(cidade)){     
+                while (intervalo.contains(cidade)){     
                     int aux = select_list((k % 2) + 1, pai_1, pai_2).caminho.indexOf(cidade);
                     if(aux == select_list((k % 2) + 1, pai_1, pai_2).caminho.size()-1){
                         cidade = select_list((k % 2) + 1, pai_1, pai_2).caminho.get(0);
@@ -225,11 +230,16 @@ class Main {
                     }
                 }
                 filho_k.caminho.set(idx, cidade);
+                intervalo.add(cidade);
                 idx++;
             }
             filho_k.calcula_fitness();
+            
+            //System.out.println("fitness: "+ filho_k.fitness);
+            
             nova_populacao.add(filho_k);
         }
+        
     }
 
     //Operador de Cruzamento Ox2 --> produz 2 filhos a partir de 2 pais
@@ -339,7 +349,7 @@ class Main {
 
     //Etapa Busca Local para gerar novos vizinhos - 2-OPT
     private static void etapa_5_busca_local(ArrayList<Caminho> populacao, ArrayList<Caminho> nova_populacao, double taxa_busca_local, int busca_local_profundidade){
-        int n_individuos_populacao = (int) (populacao.size() * taxa_busca_local);
+        int n_individuos_populacao = (int) (populacao.size());
         
         for (int i = 0; i < n_individuos_populacao; i++) {
             melhorativo2OPT(nova_populacao.get(i), nova_populacao, busca_local_profundidade);
@@ -376,7 +386,7 @@ class Main {
 
             int caminho_entrada = populacao.get(0).fitness;
 
-            // int anterior = caminho_entrada;
+             int anterior = caminho_entrada;
 
             System.out.println("Iniciando algoritmo genético com operador " + operador + "...");
             
@@ -393,11 +403,11 @@ class Main {
 
                 etapa_6_atualizacao(populacao, nova_populacao, taxa_sobrevivencia);
 
-                // if(populacao.get(0).fitness < anterior || (geracao % 1000) == 0){
-                //     System.out.println("Geração " + geracao + ": " + populacao.get(0).fitness);
-                // }      
+                 //if(populacao.get(0).fitness < anterior || (geracao % 1000) == 0){
+                     System.out.println("Geração " + geracao + ": " + populacao.get(0).fitness);
+                 //}      
                 
-                // anterior = populacao.get(0).fitness;
+                 anterior = populacao.get(0).fitness;
 
                 bufferWriter.println(geracao + "," + nova_populacao.get(0).fitness + "," + populacao.get(0).fitness);
                 geracao++;
@@ -428,7 +438,7 @@ class Main {
         HashMap<String,Double> resultado = new HashMap<String,Double>();
         
         //String entrada = args[0];
-        String entrada = "pr1002";
+        String entrada = "fnl4461";
         
         Scanner readerOtimo = new Scanner(new FileReader("./resultados.txt"));
         Scanner reader = new Scanner(new FileReader("./entradas/".concat(entrada.concat(".tsp"))));
@@ -471,17 +481,17 @@ class Main {
 
         //Execução do algoritmo genético com operador OX2
         algoritmo_genetico("OX2",
-            cria_tabela(entrada.concat("_OX2")), max_geracoes, 100, 10,
+            cria_tabela(entrada.concat("_OX2")), max_geracoes, 50, 10,
             3, 50, 0.1,
             0.6, 0.2, 0.5,
             new ArrayList<Vertice>(listVertice), resultado.get(entrada));
         
         //Execução do algoritmo genético com operador OX1
-        algoritmo_genetico("OX1",
-            cria_tabela(entrada.concat("_OX1")), max_geracoes, 100, 10,
-            3, 50, 0.1,
-            0.6, 0.2, 0.5,
-            new ArrayList<Vertice>(listVertice), resultado.get(entrada));
+        // algoritmo_genetico("OX1",
+        //     cria_tabela(entrada.concat("_OX1")), max_geracoes, 50, 2,
+        //     3, 20, 0.1,
+        //     0.9, 0.1, 0.5,
+        //     new ArrayList<Vertice>(listVertice), resultado.get(entrada));
 
     }
 }
