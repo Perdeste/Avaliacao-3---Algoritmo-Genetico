@@ -175,26 +175,24 @@ class Main {
         double total = 0;
         double anterior = 0;
         int i = 0;
-        ArrayList<Double> pedaco_array = new ArrayList<Double>();
 
         for (i = 0; i < populacao.size(); i++) total = total + populacao.get(i).fitness;
+
+        double seleciona = Math.random();
+        int index = 0;
         
         for (i = 0; i < populacao.size(); i++) {
             double pedaco = (total - populacao.get(i).fitness) / (total * populacao.size());    
-            anterior += pedaco;     
-            pedaco_array.add(anterior);
-        } 
-        double seleciona = Math.random();
-        int index = 0;
-
-        for (i = 0; i < pedaco_array.size(); i++){
-            if(pedaco_array.get(i) <= seleciona){
+            anterior += pedaco;
+            if(anterior <= seleciona){
                 index = i;
                 break;
             }
-        }
+        } 
 
-        return populacao.get(index);
+        Caminho buffer = populacao.get(index);
+        populacao.remove(index);
+        return buffer;
     }
 
     //Operador de Cruzamento Ox1 --> produz 2 filhos a partir de 2 pais
@@ -449,7 +447,7 @@ class Main {
         HashMap<String,Double> resultado = new HashMap<String,Double>();
         
         //String entrada = args[0];
-        String entrada = "pr1002";
+        String entrada = "brd14051";
         
         Scanner readerOtimo = new Scanner(new FileReader("./resultados.txt"));
         Scanner reader = new Scanner(new FileReader("./entradas/".concat(entrada.concat(".tsp"))));
