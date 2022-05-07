@@ -179,17 +179,18 @@ class Main {
         for (i = 0; i < populacao.size(); i++) total = total + populacao.get(i).fitness;
 
         double seleciona = Math.random();
+        //System.out.println(seleciona);
         int index = 0;
         
         for (i = 0; i < populacao.size(); i++) {
             double pedaco = (total - populacao.get(i).fitness) / (total * populacao.size());    
             anterior += pedaco;
-            if(anterior <= seleciona){
+            if(anterior >= seleciona){
                 index = i;
                 break;
             }
         } 
-
+        //System.out.println(index);
         Caminho buffer = populacao.get(index);
         populacao.remove(index);
         return buffer;
@@ -202,7 +203,7 @@ class Main {
         int i , j ;
         
         i = new Random().nextInt(pai_1.caminho.size() - 2) + 1;
-        j = i + new Random().nextInt(pai_1.caminho.size() - i);
+        j = i + (new Random().nextInt(pai_1.caminho.size() - i))/2;
 
         for(int k = 1; k <= 2; k++){
             Caminho filho_k = select_list(k, filho_1, filho_2);
@@ -231,7 +232,7 @@ class Main {
                 }
                 filho_k.caminho.set(idx, cidade);
                 idx++;
-            }
+            }          
             filho_k.calcula_fitness();
             nova_populacao.add(filho_k);
         }
@@ -354,12 +355,12 @@ class Main {
     private static void etapa_6_atualizacao(ArrayList<Caminho> populacao, ArrayList<Caminho> nova_populacao, double taxa_sobrevivencia){
         Collections.sort(nova_populacao);
 
-        int n_individuos_populacao = (int) (populacao.size() * (1 - taxa_sobrevivencia));
+        int n_individuos_populacao = (int) (populacao.size() * taxa_sobrevivencia);
 
         int j = 0;
-        int inicio = (populacao.size() - n_individuos_populacao)/2;
+        int inicio = n_individuos_populacao;
 
-        for (int i = inicio; i < inicio + n_individuos_populacao && i < nova_populacao.size(); i++) {
+        for (int i = inicio; i < populacao.size() && i < nova_populacao.size(); i++) {
             populacao.set(i,nova_populacao.get(j++));
         }
     }
@@ -374,7 +375,7 @@ class Main {
         try{
             String condicao_parada = "";
             int geracao = 0;
-            int estagnacao = (int) (0.1 * max_geracoes);
+            int estagnacao = (int) (0.15 * max_geracoes);
             int diferenca_geracao_melhoria = 0;
             System.out.println("Construindo população inicial...");
 
@@ -447,7 +448,7 @@ class Main {
         HashMap<String,Double> resultado = new HashMap<String,Double>();
         
         //String entrada = args[0];
-        String entrada = "brd14051";
+        String entrada = "pr1002";
         
         Scanner readerOtimo = new Scanner(new FileReader("./resultados.txt"));
         Scanner reader = new Scanner(new FileReader("./entradas/".concat(entrada.concat(".tsp"))));
@@ -481,14 +482,14 @@ class Main {
         algoritmo_genetico("OX2",
             cria_tabela(entrada.concat("_OX2")), max_geracoes, 50,
             3, 50, 0.1,
-            0.6, 0.2, 0.5,
+            0.8, 0.1, 0.3,
             new ArrayList<Vertice>(listVertice), resultado.get(entrada));
         
         //Execução do algoritmo genético com operador OX1
         algoritmo_genetico("OX1",
             cria_tabela(entrada.concat("_OX1")), max_geracoes, 50,
             3, 50, 0.1,
-            0.6, 0.2, 0.5,
+            0.8, 0.2, 0.3,
             new ArrayList<Vertice>(listVertice), resultado.get(entrada));
 
     }
