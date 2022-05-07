@@ -499,7 +499,7 @@ class Main {
         algoritmo_genetico("OX1",
             cria_tabela(entrada.concat("_OX1")), max_geracoes, 50,
             3, 50, 0.2,
-            0.7, 0.1, 0.5,
+            0.7, 0.05, 0.3,
             new ArrayList<Vertice>(listVertice), resultado.get(entrada));
 
     }
