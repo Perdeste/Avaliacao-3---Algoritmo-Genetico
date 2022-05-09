@@ -106,8 +106,8 @@ class Main {
     //Utilizamos o arquivo para gerar um gráfico no excel e apresenta-lo no relatório
     private static PrintWriter cria_tabela(String nomeArquivo){
         try{
-            FileWriter leitor = new FileWriter("./tabelas/".concat(nomeArquivo.concat(".txt")), true);
-            PrintWriter bufferWriter = new PrintWriter(leitor);
+            FileWriter leitor = new FileWriter("./tabelas/".concat(nomeArquivo.concat(".txt")));
+            PrintWriter bufferWriter = new PrintWriter(leitor, true);
             bufferWriter.println("Geracao,Melhor_Geracao,Pior_Geracao,Melhor_Geral");
             return bufferWriter;
         }catch(IOException ex){
@@ -376,7 +376,7 @@ class Main {
         try{
             String condicao_parada = "";
             int geracao = 0;
-            int estagnacao = (int) (0.5 * max_geracoes);
+            int estagnacao = (int) (0.3 * max_geracoes);
             int diferenca_geracao_melhoria = 0;
             System.out.println("Construindo população inicial...");
 
@@ -406,10 +406,10 @@ class Main {
 
                 etapa_1_aptidao(populacao);
 
-                //if(populacao.get(0).fitness < anterior){
+                if(populacao.get(0).fitness < anterior){
                     diferenca_geracao_melhoria = 0;
                     System.out.println("Geração " + geracao + ": " + populacao.get(0).fitness);
-                //}      
+                }      
                 
                 anterior = populacao.get(0).fitness;
 
@@ -435,7 +435,7 @@ class Main {
             System.out.println("----------------------------------------------"); 
             bufferWriter.println("\nPrecisao,Condicao_Parada,Tempo,Melhor_Fitness");
             bufferWriter.println(precisao + "," + condicao_parada + "," + ((fim - inicio)/1000) + "," + populacao.get(0).fitness);
-            bufferWriter.println("\ntamanho_populacao,k_individuos_selecao,posicoes_cruzamento,busca_local_profundidade,taxa_busca_local,taxa_cruzamento,taxa_mutacao,taxa_sobrevivencia");
+            bufferWriter.println("\ntamanho_populacao,posicoes_cruzamento,busca_local_profundidade,taxa_busca_local,taxa_cruzamento,taxa_mutacao,taxa_sobrevivencia");
             bufferWriter.println(tamanho_populacao + "," + posicoes_cruzamento + "," + busca_local_profundidade + "," + taxa_busca_local + "," + taxa_cruzamento + "," + taxa_mutacao + "," + taxa_sobrevivencia);
         }catch(Exception e){
             System.out.println("Erro inesperado: " + e.toString());
@@ -448,9 +448,16 @@ class Main {
     public static void main(String[] args) throws Exception {              
         ArrayList<Vertice> listVertice = new ArrayList<Vertice>();
         HashMap<String,Double> resultado = new HashMap<String,Double>();
-        
-        //String entrada = args[0];
-        String entrada = "pr1002";
+
+        String operador = args[0];
+        String entrada = args[1];
+        int tamanho_populacao = Integer.parseInt(args[2]);
+        int posicoes_cruzamento = Integer.parseInt(args[3]);
+        int busca_local_profundidade = Integer.parseInt(args[4]);
+        int taxa_busca_local = Integer.parseInt(args[5]);
+        int taxa_cruzamento = Integer.parseInt(args[6]);
+        int taxa_mutacao = Integer.parseInt(args[7]);
+        int taxa_sobrevivencia = Integer.parseInt(args[8]);
         
         Scanner readerOtimo = new Scanner(new FileReader("./resultados.txt"));
         Scanner reader = new Scanner(new FileReader("./entradas/".concat(entrada.concat(".tsp"))));
@@ -479,20 +486,28 @@ class Main {
         reader.close();
 
         int max_geracoes = 1000;
-        
-        //Execução do algoritmo genético com operador OX2
-        algoritmo_genetico("OX2",
-            cria_tabela(entrada.concat("_OX2")), max_geracoes, 100,
-            3, 50, 0.1,
-            0.9, 0.05, 0.4,
-            new ArrayList<Vertice>(listVertice), resultado.get(entrada));
-        
-        //Execução do algoritmo genético com operador OX1
-        algoritmo_genetico("OX1",
-            cria_tabela(entrada.concat("_OX1")), max_geracoes, 50,
-            3, 50, 0.1,
-            0.7, 0.1, 0.4,
-            new ArrayList<Vertice>(listVertice), resultado.get(entrada));
 
+        switch(operador){
+            case "-ox2":
+                //Execução do algoritmo genético com operador OX2
+                algoritmo_genetico("OX2",
+                    cria_tabela(entrada.concat("_OX2")), max_geracoes, tamanho_populacao,
+                    posicoes_cruzamento, busca_local_profundidade, taxa_busca_local,
+                    taxa_cruzamento, taxa_mutacao, taxa_sobrevivencia,
+                    new ArrayList<Vertice>(listVertice), resultado.get(entrada));
+                break;
+            case "-ox1":
+                //Execução do algoritmo genético com operador OX1
+                algoritmo_genetico("OX1",
+                    cria_tabela(entrada.concat("_OX1")), max_geracoes, tamanho_populacao,
+                    posicoes_cruzamento, busca_local_profundidade, taxa_busca_local,
+                    taxa_cruzamento, taxa_mutacao, taxa_sobrevivencia,
+                    new ArrayList<Vertice>(listVertice), resultado.get(entrada));
+                break;
+            default:
+                System.out.println("Operador '" + operador + "' não existe, utilize -ox1 ou -ox2");
+                break;
+        }
+    
     }
 }
