@@ -383,7 +383,7 @@ class Main {
         try{
             String condicao_parada = "";
             int geracao = 0;
-            int estagnacao = (int) (0.5 * max_geracoes);
+            int estagnacao = (int) (0.3 * max_geracoes);
             int diferenca_geracao_melhoria = 0;
             System.out.println("Construindo população inicial...");
 
@@ -414,10 +414,10 @@ class Main {
 
                 etapa_6_atualizacao(populacao, nova_populacao, taxa_sobrevivencia);
 
-                //if(populacao.get(0).fitness < anterior){
-                   // diferenca_geracao_melhoria = 0;
+                if(populacao.get(0).fitness < anterior){
+                   diferenca_geracao_melhoria = 0;
                     
-                //}      
+                }      
                 
                 anterior = populacao.get(0).fitness;
 
@@ -458,7 +458,7 @@ class Main {
         HashMap<String,Double> resultado = new HashMap<String,Double>();
         
         //String entrada = args[0];
-        String entrada = "fnl4461";
+        String entrada = "pr1002";
         
         Scanner readerOtimo = new Scanner(new FileReader("./resultados.txt"));
         Scanner reader = new Scanner(new FileReader("./entradas/".concat(entrada.concat(".tsp"))));
@@ -486,20 +486,20 @@ class Main {
 
         reader.close();
 
-        int max_geracoes = 2000;
+        int max_geracoes = 1000;
         
         //Execução do algoritmo genético com operador OX2
         // algoritmo_genetico("OX2",
-        //     cria_tabela(entrada.concat("_OX2")), max_geracoes, 50,
-        //     3, 50, 0.1,
-        //     0.8, 0.1, 0.3,
+        //     cria_tabela(entrada.concat("_OX2")), max_geracoes, 10,
+        //     3, 200, 0.4,
+        //     0.8, 0.05, 0.6,
         //     new ArrayList<Vertice>(listVertice), resultado.get(entrada));
         
         //Execução do algoritmo genético com operador OX1
         algoritmo_genetico("OX1",
-            cria_tabela(entrada.concat("_OX1")), max_geracoes, 50,
-            3, 50, 0.2,
-            0.7, 0.05, 0.3,
+            cria_tabela(entrada.concat("_OX1")), max_geracoes, 10,
+            3, 200, 0.4,
+            0.8, 0.05, 0.6,
             new ArrayList<Vertice>(listVertice), resultado.get(entrada));
 
     }
